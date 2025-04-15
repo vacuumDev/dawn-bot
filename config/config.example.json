@@ -1,0 +1,58 @@
+{
+  "application_settings": {
+    "threads": 10,
+    "keepalive_interval": 300,
+    "database_url": "sqlite://database/database.sqlite3",
+    "skip_logged_accounts": true,
+    "shuffle_accounts": true
+  },
+  "attempts_and_delay_settings": {
+    "delay_before_start": {
+      "min": 5,
+      "max": 10
+    },
+    "error_delay": 5,
+    "max_register_attempts": 10,
+    "max_login_attempts": 5,
+    "max_stats_attempts": 3,
+    "max_tasks_attempts": 3,
+    "max_attempts_to_receive_app_id": 3,
+    "max_attempts_to_verify_email": 10,
+    "max_attempts_to_send_keepalive": 3
+  },
+  "captcha_settings": {
+    "captcha_service": "anticaptcha",
+    "max_captcha_solving_time": 120,
+    "two_captcha_api_key": "",
+    "anti_captcha_api_key": ""
+  },
+  "redirect_settings": {
+    "enabled": false,
+    "email": "",
+    "password": "",
+    "imap_server": "",
+    "use_proxy": false
+  },
+  "imap_settings": {
+    "use_proxy_for_imap": false,
+    "use_single_imap": {
+      "enable": false,
+      "imap_server": "imap.gmail.com"
+    },
+    "servers": {
+      "gmail.com": "imap.gmail.com",
+      "yahoo.com": "imap.mail.yahoo.com",
+      "icloud.com": "imap.mail.me.com",
+      "mail.ru": "imap.mail.ru",
+      "gmx.com": "imap.gmx.com",
+      "gmx.net": "imap.gmx.net",
+      "gmx.de": "imap.gmx.net",
+      "onet.pl": "imap.poczta.onet.pl",
+      "onet.com.pl": "imap.poczta.onet.pl",
+      "op.pl": "imap.poczta.onet.pl",
+      "onet.eu": "imap.poczta.onet.pl",
+      "gazeta.pl": "imap.gazeta.pl"
+    }
+  },
+  "referralCodes": ["CODE1", "CODE2", "CODE3"]
+}
