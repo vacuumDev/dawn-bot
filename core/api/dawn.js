@@ -1,8 +1,7 @@
 // Импорт зависимостей и конфигурации
 import axios from 'axios';
 import { faker } from '@faker-js/faker';
-import config from 'config/config.json' assert { type: 'json' };
-
+import config from "../../utils/config.js";
 // Базовый класс APIClient
 class APIClient {
     static EXTENSION_API_URL = 'https://www.aeropres.in/chromeapi/dawn';
