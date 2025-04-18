@@ -12,6 +12,7 @@
     "@faker-js/faker": "^9.7.0",
     "axios": "^1.8.4",
     "csv-writer": "^1.6.0",
+    "imap": "^0.8.19",
     "winston": "^3.17.0"
   }
 }
