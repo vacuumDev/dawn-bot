@@ -10,9 +10,16 @@
   "description": "",
   "dependencies": {
     "@faker-js/faker": "^9.7.0",
+    "@prisma/client": "^6.6.0",
     "axios": "^1.8.4",
+    "boxen": "^8.0.1",
+    "chalk": "^5.4.1",
+    "console-table-printer": "^2.12.1",
     "csv-writer": "^1.6.0",
+    "figlet": "^1.8.1",
     "imap": "^0.8.19",
+    "inquirer": "^12.5.2",
+    "prisma": "^6.6.0",
     "winston": "^3.17.0"
   }
 }

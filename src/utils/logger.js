@@ -6,14 +6,14 @@ const logLevel = config.debug ? "debug" : "info";
 
 // Create a Winston logger with the configured level and transports.
 const logger = winston.createLogger({
-    level: logLevel,
-    format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.printf(
-            (info) => `${info.timestamp} [${info.level}]: ${info.message}`,
-        ),
+  level: logLevel,
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.printf(
+      (info) => `${info.timestamp} [${info.level}]: ${info.message}`,
     ),
-    transports: [new winston.transports.Console()],
+  ),
+  transports: [new winston.transports.Console()],
 });
 
 export { logger };

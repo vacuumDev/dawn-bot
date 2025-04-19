@@ -5,7 +5,8 @@
     "database_url": "sqlite://database/database.sqlite3",
     "skip_logged_accounts": true,
     "shuffle_accounts": true,
-    "proxy_url": "http://maddnivan_gmail_com-country-{COUNTRY}-sid-{ID}4-filter-medium:hy9o97m71v@gate.nodemaven.com:8080"
+    "proxy_url": "http://maddnivan_gmail_com-country-{COUNTRY}-sid-{ID}4-filter-medium:hy9o97m71v@gate.nodemaven.com:8080",
+    "countries": ["ua","il","at"]
   },
   "attempts_and_delay_settings": {
     "delay_before_start": {
@@ -55,6 +56,5 @@
       "gazeta.pl": "imap.gazeta.pl"
     }
   },
-  "referralCodes": ["CODE1", "CODE2", "CODE3"],
   "debug": true
 }

@@ -1,0 +1,21 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                 Int       @id @default(autoincrement())
+  email              String    @unique
+  password           String?
+  appId              String?   @map("app_id")
+  authToken          String?   @map("auth_token")
+  activeAccountProxy String?   @map("active_account_proxy")
+  sleepUntil         DateTime? @map("sleep_until")
+
+  @@map("dawn_accounts_v1.9")
+}
