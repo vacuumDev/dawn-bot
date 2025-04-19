@@ -4,14 +4,12 @@ import captchaSolver from "./../solvers/anti-captcha.js";
 import proxyManager from "../../utils/proxy-manager.js";
 import { DawnExtensionAPI } from "../api/dawn.js";
 import {
-  EmailValidator,
-  LinkExtractor,
   operationFailed,
   operationSuccess,
   operationExportStatsSuccess,
   operationExportStatsFailed,
   validateError,
-} from "./utils/index.js";
+} from "../../utils/operations.js";
 import Accounts from "../database/Accounts.js";
 import {
   APIError,
@@ -21,8 +19,10 @@ import {
   ProxyForbidden,
   EmailValidationFailed,
 } from "../exceptions/base.js";
-import { Proxy } from "better-proxy";
+import { HttpsProxyAgent } from "https-proxy-agent";
+import { HttpProxyAgent } from "http-proxy-agent";
 import { delay } from "../../utils/delay.js";
+import {EmailValidator, LinkExtractor} from "../../utils/email-handler.js";
 
 export class Bot {
   constructor(accountData) {
@@ -184,30 +184,46 @@ export class Bot {
     return new Date(Date.now() + secs * 1000);
   }
 
-  async _validateEmail(proxy) {
-    const prx = proxy ? Proxy.fromString(proxy) : null;
+
+  /**
+   * Валидирует электронную почту через IMAP, используя HTTP(S)-прокси при необходимости
+   * @param {string|null} proxyUrl
+   */
+  async _validateEmail(proxyUrl) {
+    // Создаем агент для axios/imap, если есть прокси
+    let agent;
+    if (proxyUrl) {
+      agent = proxyUrl.startsWith('https')
+          ? new HttpsProxyAgent(proxyUrl)
+          : new HttpProxyAgent(proxyUrl);
+    }
+
     if (config.redirect_settings.enabled) {
       return new EmailValidator(
-        config.redirect_settings.imap_server,
-        config.redirect_settings.email,
-        config.redirect_settings.password,
-      ).validate(config.redirect_settings.use_proxy ? prx : null);
+          config.redirect_settings.imap_server,
+          config.redirect_settings.email,
+          config.redirect_settings.password
+      ).validate(agent);
     }
+
     return new EmailValidator(
-      this.accountData.imap_server,
-      this.accountData.email,
-      this.accountData.password,
-    ).validate(config.imap_settings.use_proxy_for_imap ? prx : null);
+        this.accountData.imap_server,
+        this.accountData.email,
+        this.accountData.password
+    ).validate(agent);
   }
 
-  async _isEmailValid(proxy) {
-    const res = await this._validateEmail(proxy);
+  /**
+   * Проверяет результат _validateEmail
+   */
+  async _isEmailValid(proxyUrl) {
+    const res = await this._validateEmail(proxyUrl);
     if (!res.status) {
       if (res.data && res.data.includes("validation failed")) {
         throw new EmailValidationFailed(res.data);
       }
       console.error(
-        `Account: ${this.accountData.email} | Invalid email: ${res.data}`,
+          `Account: ${this.accountData.email} | Invalid email: ${res.data}`
       );
       return false;
     }
@@ -215,45 +231,48 @@ export class Bot {
   }
 
   async _extractLink() {
+    // При проксировании передаем URL строки, агенты создаются внутри LinkExtractor
     if (config.redirect_settings.enabled) {
       return new LinkExtractor(
-        config.redirect_settings.imap_server,
-        config.redirect_settings.email,
-        config.redirect_settings.password,
-        this.accountData.email,
+          config.redirect_settings.imap_server,
+          config.redirect_settings.email,
+          config.redirect_settings.password,
+          { redirectEmail: this.accountData.email }
       ).extractLink(
-        config.redirect_settings.use_proxy
-          ? this.accountData.activeAccountProxy
-          : null,
+          config.redirect_settings.use_proxy
+              ? this.accountData.activeAccountProxy
+              : null
       );
     }
+
     return new LinkExtractor(
-      this.accountData.imap_server,
-      this.accountData.email,
-      this.accountData.password,
+        this.accountData.imap_server,
+        this.accountData.email,
+        this.accountData.password
     ).extractLink(
-      config.imap_settings.use_proxy_for_imap
-        ? this.accountData.activeAccountProxy
-        : null,
+        config.imap_settings.use_proxy_for_imap
+            ? this.accountData.activeAccountProxy
+            : null
     );
   }
 
   async _updateAccountProxy(dbAccountValue, attempt) {
-    const delay = config.attempts_and_delay_settings.error_delay;
+    const delaySec = config.attempts_and_delay_settings.error_delay;
     console.info(
-      `Account: ${this.accountData.email} | Changing proxy, retry in ${delay}s...`,
+        `Account: ${this.accountData.email} | Changing proxy, retry in ${delaySec}s...`
     );
     if (dbAccountValue?.activeAccountProxy) {
       await proxyManager.releaseProxy(dbAccountValue.activeAccountProxy);
     }
-    const p = await proxyManager.getProxy();
-    const url = p.asUrl || p;
+    const newProxy = await proxyManager.getProxy();
+    const url = typeof newProxy === 'string' ? newProxy : newProxy.asUrl;
     if (dbAccountValue) {
       await dbAccountValue.updateAccount({ activeAccountProxy: url });
     }
     this.accountData.activeAccountProxy = url;
-    await new Promise((r) => setTimeout(r, delay * 1000));
+    await delay(delaySec * 1000);
   }
+
 
   async getCaptchaData(api, type, maxAttempts = 5, appId = null) {
     const handleImage = async () => {

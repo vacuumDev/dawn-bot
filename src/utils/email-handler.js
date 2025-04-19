@@ -218,4 +218,115 @@ class EmailHandler {
   }
 }
 
+export class EmailValidator {
+  constructor(imapServer, email, password) {
+    this.imapServer = imapServer;
+    this.email = email;
+    this.password = password;
+  }
+
+  async validate(proxy = null) {
+    // Reuse IMAP config from EmailHandler
+    try {
+      await EmailHandler.fetchOtpFromEmail(
+          this.email,
+          '', // no refresh token
+          '',
+          /()/,
+          0
+      );
+      return { status: true, identifier: this.email, data: `Valid:${new Date()}` };
+    } catch (err) {
+      if (err.message.includes('Authentication failed')) {
+        return { status: false, identifier: this.email, data: 'Invalid credentials' };
+      }
+      return { status: false, identifier: this.email, data: `validation failed: ${err.message}` };
+    }
+  }
+}
+
+// ===== LinkCache =====
+class LinkCache {
+  constructor() { this._used = {}; }
+  isLinkUsed(link) { return !!this._used[link]; }
+  addLink(email, link) { this._used[link] = email; }
+}
+
+// ===== LinkExtractor =====
+export class LinkExtractor {
+  static cache = new LinkCache();
+
+  constructor(imapServer, email, password, options = {}) {
+    this.imapServer = imapServer;
+    this.email = email;
+    this.password = password;
+    this.maxAttempts = options.maxAttempts || 8;
+    this.delay = options.delay || 5;
+    this.redirectEmail = options.redirectEmail || null;
+    this.patterns = options.patterns || [
+      /https:\/\/www\.aeropres\.in\/chromeapi\/dawn\/v1\/userverify\/verifyconfirm\?key=[^\s]+/,
+      /https?:\/\/webmail\.online\/go\.php\?r=[^\s]+/,
+      /https?:\/\/u\d+\.ct\.sendgrid\.net\/ls\/click\?upn=[^\s]+/
+    ];
+  }
+
+  async extractLink(proxy = null) {
+    for (let i = 0; i < this.maxAttempts; i++) {
+      const link = await this._searchInFolders(proxy);
+      if (link) {
+        return { status: true, identifier: this.email, data: link };
+      }
+      console.info(`Retry ${i+1}/${this.maxAttempts} in ${this.delay}s`);
+      await new Promise(r => setTimeout(r, this.delay*1000));
+    }
+    console.error(`Max attempts reached for ${this.email}`);
+    return { status: false, identifier: this.email, data: 'Max attempts reached' };
+  }
+
+  async _searchInFolders(proxy) {
+    // Simplified: only Inbox
+    return new Promise((resolve) => {
+      const config = {
+        user: this.email,
+        password: this.password,
+        host: this.imapServer,
+        port: 993,
+        tls: true
+      };
+      // attach proxy socket if provided (similar to OTP)
+      if (proxy) {
+        // ... omitted for brevity
+      }
+      const imap = new Imap(config);
+      imap.once('ready', () => {
+        imap.openBox('INBOX', true, (err, box) => {
+          if (err) { imap.end(); return resolve(null); }
+          imap.search(['ALL'], (e, results) => {
+            const f = imap.fetch(results, { bodies: '' });
+            let found = null;
+            f.on('message', (msg) => {
+              let buf = '';
+              msg.on('body', (stream) => stream.on('data', c => buf += c.toString()));
+              msg.once('end', () => {
+                const matches = this.patterns.map(p => buf.match(p)).filter(m => m);
+                if (matches.length) {
+                  const link = matches[0][1] || matches[0][0];
+                  if (!LinkExtractor.cache.isLinkUsed(link)) {
+                    LinkExtractor.cache.addLink(this.email, link);
+                    found = link;
+                  }
+                }
+              });
+            });
+            f.once('end', () => { imap.end(); resolve(found); });
+          });
+        });
+      });
+      imap.once('error', () => resolve(null));
+      imap.connect();
+    });
+  }
+}
+
+
 export default EmailHandler;

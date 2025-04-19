@@ -19,7 +19,7 @@ export class ConfigLoader {
 
   constructor(basePath = process.cwd()) {
     this.basePath = path.resolve(basePath);
-    this.settingsPath = path.join(this.basePath, "config.json");
+    this.settingsPath = path.join(this.basePath, "config", "config.json");
     this.dataPath = path.join(this.basePath, "config", "data");
   }
 

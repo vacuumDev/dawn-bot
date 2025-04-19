@@ -1,7 +1,7 @@
 {
   "name": "dawn-bot",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/app.js",
   "type": "module",
   "scripts": {},
   "keywords": [],
@@ -17,6 +17,8 @@
     "console-table-printer": "^2.12.1",
     "csv-writer": "^1.6.0",
     "figlet": "^1.8.1",
+    "http-proxy-agent": "^7.0.2",
+    "https-proxy-agent": "^7.0.6",
     "imap": "^0.8.19",
     "inquirer": "^12.5.2",
     "prisma": "^6.6.0",
