@@ -217,6 +217,7 @@ export class Bot {
    * Проверяет результат _validateEmail
    */
   async _isEmailValid(proxyUrl) {
+  return  true;
     const res = await this._validateEmail(proxyUrl);
     if (!res.status) {
       if (res.data && res.data.includes("validation failed")) {
@@ -298,7 +299,7 @@ export class Bot {
       console.info(
         `Account: ${this.accountData.email} | Solving Cloudflare challenge...`,
       );
-      const [ans, solved, ...rest] = await captchaSolver.solveTurnistale();
+      const [ans, solved, ...rest] = await captchaSolver.solveTurnistile();
       if (solved) {
         console.info(`Account: ${this.accountData.email} | Cloudflare solved`);
         return [ans, rest[0] || null];
@@ -422,6 +423,7 @@ export class Bot {
   async processRegistration() {
     const maxAttempts =
       config.attempts_and_delay_settings.max_register_attempts;
+
     for (let i = 0; i < maxAttempts; i++) {
       let dbVal = null;
       let api = null;
@@ -444,7 +446,7 @@ export class Bot {
             this.accountData.password,
           );
         }
-        api = new DawnExtensionAPI({ proxy });
+        api = new DawnExtensionAPI(null, proxy);
         appId = appId || (await this.processGetAppId(api));
         if (!appId)
           return operationFailed(
@@ -452,7 +454,7 @@ export class Bot {
             this.accountData.password,
           );
         if (!dbVal) {
-          dbVal = await Accounts.createOrUpdate(
+          dbVal = await Accounts.createOrUpdateAccount(
             this.accountData.email,
             this.accountData.password,
             appId,
@@ -544,7 +546,7 @@ export class Bot {
             this.accountData.password,
           );
         if (!dbVal)
-          await Accounts.createOrUpdate(
+          await Accounts.createOrUpdateAccount(
             this.accountData.email,
             this.accountData.password,
             appId,
@@ -641,7 +643,7 @@ export class Bot {
             this.accountData.password,
           );
         if (!dbVal)
-          dbVal = await Accounts.createOrUpdate(
+          dbVal = await Accounts.createOrUpdateAccount(
             this.accountData.email,
             this.accountData.password,
             appId,

@@ -28,13 +28,13 @@ export default class Accounts {
   }
 
   /** Создать или обновить аккаунт */
-  static async createOrUpdateAccount({
+  static async createOrUpdateAccount(
     email,
     password,
     appId,
     authToken,
     proxy,
-  }) {
+  ) {
     return prisma.account.upsert({
       where: { email },
       create: {

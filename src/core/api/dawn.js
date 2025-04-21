@@ -2,6 +2,8 @@
 import axios from "axios";
 import { faker } from "@faker-js/faker";
 import config from "../../utils/config.js";
+import {HttpsProxyAgent} from "https-proxy-agent";
+import {HttpProxyAgent} from "http-proxy-agent";
 // Базовый класс APIClient
 class APIClient {
   static EXTENSION_API_URL = "https://www.aeropres.in/chromeapi/dawn";
@@ -24,11 +26,8 @@ class APIClient {
     };
 
     if (this.proxy) {
-      const [host, port] = this.proxy.split(":");
-      axiosConfig.proxy = {
-        host: host,
-        port: parseInt(port, 10),
-      };
+      axiosConfig.httpsAgent = new HttpsProxyAgent(this.proxy)
+      axiosConfig.httpAgent = new HttpProxyAgent(this.proxy)
     }
 
     return axios.create(axiosConfig);

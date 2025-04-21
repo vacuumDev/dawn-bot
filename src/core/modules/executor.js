@@ -12,37 +12,37 @@ export default class ModuleExecutor {
     }
 
     /** Обработка регистрации аккаунта */
-    async _processRegistration() {
+    async _process_registration() {
         const operationResult = await this.bot.processRegistration();
         await fileOperations.exportResult(operationResult, 'register');
     }
 
     /** Обработка верификации аккаунта */
-    async _processVerify() {
+    async _process_verify() {
         const operationResult = await this.bot.processVerify();
         await fileOperations.exportResult(operationResult, 'verify');
     }
 
     /** Обработка логина аккаунта */
-    async _processLogin() {
+    async _process_login() {
         const operationResult = await this.bot.processLogin();
         await fileOperations.exportResult(operationResult, 'login');
     }
 
     /** Обработка завершения задач аккаунта */
-    async _processCompleteTasks() {
+    async _process_complete_tasks() {
         const operationResult = await this.bot.processCompleteTasks();
         await fileOperations.exportResult(operationResult, 'tasks');
     }
 
     /** Обработка экспорта статистики аккаунта */
-    async _processExportStats() {
+    async _process_export_stats() {
         const statData = await this.bot.processExportStats();
         await fileOperations.exportStats(statData);
     }
 
     /** Обработка режима фарма аккаунта */
-    async _processFarm() {
+    async _process_farm() {
         await this.bot.processFarm();
     }
 }

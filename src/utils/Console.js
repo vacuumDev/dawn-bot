@@ -5,7 +5,7 @@ import Boxen from "boxen";
 import { Table } from "console-table-printer";
 import config from "./config.js";
 
-export default class ConsoleManager {
+class ConsoleManager {
   static MODULES = [
     "🆕 Register accounts",
     "🔍 Verify accounts",
@@ -159,7 +159,7 @@ export default class ConsoleManager {
       Parameter: "Referral codes",
       Value: config.referral_codes.length,
     });
-    acTable.addRow({ Parameter: "Proxies", Value: config.proxies.length });
+    acTable.addRow({ Parameter: "Proxies", Value: config.application_settings.proxy_url });
 
     // Combine into one box
     const combined = [
@@ -189,3 +189,7 @@ export default class ConsoleManager {
     if (moduleKey === "exit") process.exit(0);
   }
 }
+
+const consoleManager = new ConsoleManager();
+
+export default consoleManager;

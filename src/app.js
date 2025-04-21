@@ -2,7 +2,7 @@ import config from "./utils/config.js";
 import fileOperations from "./utils/file_utils.js";
 import ModuleExecutor from "./core/modules/executor.js";
 import Accounts from "./core/database/Accounts.js";
-import Console from "./utils/Console.js";
+import consoleManager from "./utils/Console.js";
 
 // Инициализация базы данных и файлов
 async function initializeApp() {
@@ -85,7 +85,7 @@ async function run() {
   };
 
   while (true) {
-    await Console.build();
+    await consoleManager.build();
 
     if (config.module === "clean_accounts_proxies") {
       await cleanAccountsProxies();

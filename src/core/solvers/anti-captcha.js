@@ -1,4 +1,5 @@
 import axios from "axios";
+import config from "../../utils/config.js";
 
 /**
  * Функция задержки (аналог asyncio.sleep)
@@ -18,7 +19,7 @@ class AntiCaptchaSolver {
     this.apiKey = apiKey;
     this.maxAttempts = maxAttempts;
     this.client = axios.create({
-      timeout: 10000, // 10 секунд
+      timeout: 40000, // 40 секунд
     });
   }
 
@@ -161,4 +162,5 @@ class AntiCaptchaSolver {
   }
 }
 
-export default AntiCaptchaSolver;
+const antiCaptchaSolver = new AntiCaptchaSolver(config.captcha_settings.anti_captcha_api_key, 50);
+export default antiCaptchaSolver;

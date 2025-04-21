@@ -84,18 +84,16 @@ export class ConfigLoader {
           mode,
         )
       ) {
-        if (parts.length !== 2) {
+        if (parts.length !== 4) {
           throw new ConfigurationError(
             `Invalid account format (${filename}): ${line}`,
           );
         }
-        accounts.push({ email: parts[0], password: parts[1] });
+        accounts.push({ email: parts[0], password: parts[1], refreshToken: parts[2], clientId: parts[3] });
       } else {
         // default_accounts
-        if (parts.length === 2) {
-          accounts.push({ email: parts[0], password: parts[1] });
-        } else {
-          accounts.push({ email: parts[0], password: "" });
+        if (parts.length === 4) {
+          accounts.push({ email: parts[0], password: parts[1], refreshToken: parts[2], clientId: parts[3] });
         }
       }
     }
