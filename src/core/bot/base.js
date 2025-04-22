@@ -22,7 +22,7 @@ import {
 import { HttpsProxyAgent } from "https-proxy-agent";
 import { HttpProxyAgent } from "http-proxy-agent";
 import { delay } from "../../utils/delay.js";
-import {EmailValidator, LinkExtractor} from "../../utils/email-handler.js";
+import EmailHandler, {EmailValidator, LinkExtractor} from "../../utils/email-handler.js";
 
 export class Bot {
   constructor(accountData) {
@@ -231,30 +231,44 @@ export class Bot {
     return true;
   }
 
-  async _extractLink() {
+  async _extractLink(timestamp) {
     // При проксировании передаем URL строки, агенты создаются внутри LinkExtractor
-    if (config.redirect_settings.enabled) {
-      return new LinkExtractor(
-          config.redirect_settings.imap_server,
-          config.redirect_settings.email,
-          config.redirect_settings.password,
-          { redirectEmail: this.accountData.email }
-      ).extractLink(
-          config.redirect_settings.use_proxy
-              ? this.accountData.activeAccountProxy
-              : null
-      );
-    }
+    // if (config.redirect_settings.enabled) {
+    //   return new LinkExtractor(
+    //       config.redirect_settings.imap_server,
+    //       config.redirect_settings.email,
+    //       config.redirect_settings.password,
+    //       { redirectEmail: this.accountData.email }
+    //   ).extractLink(
+    //       config.redirect_settings.use_proxy
+    //           ? this.accountData.activeAccountProxy
+    //           : null
+    //   );
+    // }
 
-    return new LinkExtractor(
-        this.accountData.imap_server,
-        this.accountData.email,
-        this.accountData.password
-    ).extractLink(
-        config.imap_settings.use_proxy_for_imap
-            ? this.accountData.activeAccountProxy
-            : null
+    const link = await EmailHandler.fetchOtpFromEmail(this.accountData.email,
+        this.accountData.refreshToken,
+        this.accountData.clientId,
+        [
+          /https:\/\/www\.aeropres\.in\/chromeapi\/dawn\/v1\/userverify\/verifyconfirm\?key=[^\s]+/,
+          /https?:\/\/webmail\.online\/go\.php\?r=[^\s]+/,
+          // /https?:\/\/u\d+\.ct\.sendgrid\.net\/ls\/click\?upn=[^\s]+/,
+          /key=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/
+        ],
+        timestamp
     );
+
+    console.log(link)
+    return link;
+    // return (
+    //     this.accountData.imap_server,
+    //     this.accountData.email,
+    //     this.accountData.password
+    // ).extractLink(
+    //     config.imap_settings.use_proxy_for_imap
+    //         ? this.accountData.activeAccountProxy
+    //         : null
+    // );
   }
 
   async _updateAccountProxy(dbAccountValue, attempt) {
@@ -354,14 +368,13 @@ export class Bot {
     return null;
   }
 
-  async _getConfirmationKey(api) {
-    const link = await this._extractLink();
-    if (!link.status) return null;
+  async _getConfirmationKey(api, timestamp) {
+    const link = await this._extractLink(timestamp);
     try {
-      return link.data.split("key=")[1];
+      return link.split("key=")[1];
     } catch {
-      const res = await api.clearRequest(link.data);
-      return res.url.split("key=")[1];
+      const res = await api.clearRequest(link);
+      return res.split("key=")[1];
     }
   }
 
@@ -446,6 +459,7 @@ export class Bot {
             this.accountData.password,
           );
         }
+        const timestampRegistration = Date.now();
         api = new DawnExtensionAPI(null, proxy);
         appId = appId || (await this.processGetAppId(api));
         if (!appId)
@@ -464,7 +478,7 @@ export class Bot {
         }
         await this._registerAccount(api, appId);
         console.info(`Registration initiated for ${this.accountData.email}`);
-        const key = await this._getConfirmationKey(api);
+        const key = await this._getConfirmationKey(api, timestampRegistration);
         if (!key) {
           await Bot.handleInvalidAccount(
             this.accountData.email,

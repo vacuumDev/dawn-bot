@@ -62,7 +62,7 @@ class EmailHandler {
    * @param {string} email The full email address (e.g. test@hotmail.com).
    * @param {string} currentRefreshToken The current MS refresh token.
    * @param {string} clientId The MS OAuth Client ID.
-   * @param {RegExp} regex The MS OAuth Client ID.
+   * @param {RegExp[]} regexes The MS OAuth Client ID.
    * @param {number} timestamp Only fetch OTP messages after this timestamp (ms).
    * @returns {Promise<string|null>} The first matching OTP code found, or null if not found.
    */
@@ -70,7 +70,7 @@ class EmailHandler {
     email,
     currentRefreshToken,
     clientId,
-    regex,
+    regexes,
     timestamp,
   ) {
     // Определяем хост в зависимости от домена.
@@ -133,17 +133,21 @@ class EmailHandler {
             stream.on("data", (chunk) => {
               buffer += chunk.toString("utf8");
             });
-            stream.once("end", () => {
+            stream.once("end", () =>
+            {
+              buffer = buffer.replaceAll("3D", "").replaceAll("=\r\n", "");
               const header = Imap.parseHeader(buffer);
               // Проверяем дату сообщения – пропускаем, если оно старее указанного timestamp.
               const msgDate = new Date(header.date?.[0] || 0).getTime();
               if (!msgDate || msgDate < timestamp) return;
               // Ищем OTP с помощью регулярного выражения.
-              const match = buffer.match(regex);
-              if (match && msgDate > latestDate) {
-                latestDate = msgDate;
-                latestOtp = match[1];
-                console.log(`Найден OTP [${latestOtp}] от ${header.date}`);
+              for (const regex of regexes) {
+                const match = buffer.match(regex);
+                if (match && msgDate > latestDate) {
+                  latestDate = msgDate;
+                  latestOtp = match[0].split('"')[0];
+                  console.log(`Найден OTP [${latestOtp}] от ${header.date}`);
+                }
               }
             });
           });
