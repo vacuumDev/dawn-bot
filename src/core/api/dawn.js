@@ -82,7 +82,7 @@ class APIClient {
     headers = {},
     cookies = null, // Для работы с cookies при необходимости можно добавить специализированный модуль
     verify = true,
-    maxRetries = 2,
+    maxRetries = 5,
     retryDelay = 3000,
   }) {
     if (!url) {

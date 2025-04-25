@@ -276,13 +276,10 @@ export class Bot {
     console.info(
         `Account: ${this.accountData.email} | Changing proxy, retry in ${delaySec}s...`
     );
-    if (dbAccountValue?.activeAccountProxy) {
-      await proxyManager.releaseProxy(dbAccountValue.activeAccountProxy);
-    }
     const newProxy = await proxyManager.getProxy();
     const url = typeof newProxy === 'string' ? newProxy : newProxy.asUrl;
     if (dbAccountValue) {
-      await dbAccountValue.updateAccount({ activeAccountProxy: url });
+      await Accounts.updateAccount(dbAccountValue.email, { proxy: url });
     }
     this.accountData.activeAccountProxy = url;
     await delay(delaySec * 1000);
@@ -360,7 +357,7 @@ export class Bot {
         );
         if (i < maxAttempts - 1) {
           const p = await proxyManager.getProxy();
-          api = new DawnExtensionAPI({ proxy: p.asUrl || p });
+          api = new DawnExtensionAPI(null, proxy);
           await new Promise((r) => setTimeout(r, delay * 1000));
         }
       }
@@ -425,7 +422,7 @@ export class Bot {
       if (!proxy) {
         const p = await proxyManager.getProxy();
         proxy = p.asUrl || p;
-        await dbVal.updateAccount({ activeAccountProxy: proxy });
+        await Accounts.updateAccount(dbVal.email, { proxy: proxy });
       }
       return [proxy, dbVal.appId];
     }
@@ -552,7 +549,7 @@ export class Bot {
             this.accountData.email,
             this.accountData.password,
           );
-        api = new DawnExtensionAPI({ proxy });
+        api = new DawnExtensionAPI(dbVal.authToken || null, proxy);
         appId = appId || (await this.processGetAppId(api));
         if (!appId)
           return operationFailed(
@@ -649,7 +646,7 @@ export class Bot {
             this.accountData.password,
           );
         let [proxy, appId] = await Bot._prepareProxyAndAppId(dbVal);
-        api = new DawnExtensionAPI({ proxy });
+        api = new DawnExtensionAPI(dbVal.authToken || null, proxy);
         appId = appId || (await this.processGetAppId(api));
         if (!appId)
           return operationFailed(
@@ -665,7 +662,13 @@ export class Bot {
             proxy,
           );
         const token = await this._loginAccount(api, appId);
-        await dbVal.updateAccount({ authToken: token });
+        dbVal = await Accounts.createOrUpdateAccount(
+            this.accountData.email,
+            this.accountData.password,
+            appId,
+            token,
+            proxy,
+        );
         return operationSuccess(
           this.accountData.email,
           this.accountData.password,
@@ -715,7 +718,7 @@ export class Bot {
           );
         }
         let [proxy, appId] = await Bot._prepareProxyAndAppId(dbVal);
-        api = new DawnExtensionAPI({ authToken: dbVal.authToken, proxy });
+        api = new DawnExtensionAPI(dbVal.authToken || null, proxy);
         appId = appId || (await this.processGetAppId(api));
         if (!appId)
           return operationFailed(
@@ -780,7 +783,7 @@ export class Bot {
           return operationExportStatsFailed();
         }
         let [proxy, appId] = await Bot._prepareProxyAndAppId(dbVal);
-        api = new DawnExtensionAPI({ authToken: dbVal.authToken, proxy });
+        api = new DawnExtensionAPI(dbVal.authToken || null, proxy);
         appId = appId || (await this.processGetAppId(api));
         if (!appId) return operationExportStatsFailed();
         const info = await api.userInfo(appId);
@@ -829,7 +832,7 @@ export class Bot {
           return;
         }
         let [proxy, appId] = await Bot._prepareProxyAndAppId(dbVal);
-        api = new DawnExtensionAPI({ authToken: dbVal.authToken, proxy });
+        api = new DawnExtensionAPI(dbVal.authToken, proxy);
         appId = appId || (await this.processGetAppId(api));
         if (!appId) return;
         if (dbVal.sleepUntil) {
@@ -852,7 +855,7 @@ export class Bot {
       } finally {
         if ((slept === false || slept === null) && dbVal) {
           const next = Bot.getSleepUntil();
-          await dbVal.updateAccount({ sleepUntil: next });
+          await Accounts.updateAccount(dbVal.email, { sleepUntil: next });
         }
         if (api) await api.closeSession();
       }
